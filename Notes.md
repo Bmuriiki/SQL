@@ -1,13 +1,476 @@
 SQL- STRUCTURED QUERY LANGUAGE
 
-Category
-1. Data Query Language(DQL)
-2. Data Manipulation Language(DML)
-3. Data Definition Language(DDL)
+# SQL Command Types
 
-Types of Databases
-1. Relational
-2. Non-relational
+SQL (Structured Query Language) is divided into different categories based on the operations performed on a database. Understanding these categories helps you know which commands to use when creating, querying, modifying, securing, and managing data.
+
+There are **five main types of SQL commands**:
+
+1. Data Definition Language (DDL)
+2. Data Manipulation Language (DML)
+3. Data Query Language (DQL)
+4. Data Control Language (DCL)
+5. Transaction Control Language (TCL)
+
+---
+
+# 1. Data Definition Language (DDL)
+
+Data Definition Language (DDL) is used to create and modify the structure of database objects such as tables, schemas, indexes, and views.
+
+Changes made using DDL commands are generally permanent.
+
+## Common DDL Commands
+
+| Command | Description |
+|----------|-------------|
+| `CREATE` | Creates a new database object |
+| `ALTER` | Modifies an existing object |
+| `DROP` | Deletes an object permanently |
+| `TRUNCATE` | Removes all rows from a table while keeping its structure |
+| `RENAME` | Renames a database object |
+
+## Example
+
+### Create a Table
+
+```sql
+CREATE TABLE employees (
+    employee_id INT,
+    employee_name VARCHAR(100),
+    department VARCHAR(50),
+    salary DECIMAL(10,2)
+);
+```
+
+### Add a New Column
+
+```sql
+ALTER TABLE employees
+ADD email VARCHAR(100);
+```
+
+### Delete a Table
+
+```sql
+DROP TABLE employees;
+```
+
+---
+
+# 2. Data Manipulation Language (DML)
+
+Data Manipulation Language (DML) is used to insert, update, and delete records within database tables.
+
+Unlike DDL, DML changes can often be rolled back before committing the transaction.
+
+## Common DML Commands
+
+| Command | Description |
+|----------|-------------|
+| `INSERT` | Adds new records |
+| `UPDATE` | Modifies existing records |
+| `DELETE` | Removes records |
+| `MERGE` | Inserts, updates, or deletes data based on matching conditions |
+
+## Examples
+
+### Insert Data
+
+```sql
+INSERT INTO employees
+(employee_id, employee_name, department, salary)
+VALUES
+(1, 'Brian', 'IT', 85000);
+```
+
+### Update Data
+
+```sql
+UPDATE employees
+SET salary = 90000
+WHERE employee_id = 1;
+```
+
+### Delete Data
+
+```sql
+DELETE FROM employees
+WHERE employee_id = 1;
+```
+
+---
+
+# 3. Data Query Language (DQL)
+
+Data Query Language (DQL) is used to retrieve information from a database.
+
+The primary DQL command is `SELECT`.
+
+## Example
+
+```sql
+SELECT employee_name,
+       department,
+       salary
+FROM employees
+WHERE salary > 70000
+ORDER BY salary DESC;
+```
+
+---
+
+# 4. Data Control Language (DCL)
+
+Data Control Language (DCL) manages user permissions and database security.
+
+## Common DCL Commands
+
+| Command | Description |
+|----------|-------------|
+| `GRANT` | Gives permissions to users |
+| `REVOKE` | Removes permissions from users |
+
+## Examples
+
+### Grant Permission
+
+```sql
+GRANT SELECT
+ON employees
+TO analyst;
+```
+
+### Revoke Permission
+
+```sql
+REVOKE SELECT
+ON employees
+FROM analyst;
+```
+
+---
+
+# 5. Transaction Control Language (TCL)
+
+Transaction Control Language (TCL) manages database transactions.
+
+Transactions ensure that a group of SQL statements either complete successfully together or are rolled back if an error occurs.
+
+## Common TCL Commands
+
+| Command | Description |
+|----------|-------------|
+| `COMMIT` | Saves all changes permanently |
+| `ROLLBACK` | Undoes changes since the last commit |
+| `SAVEPOINT` | Creates a point to roll back to within a transaction |
+
+## Examples
+
+### Commit a Transaction
+
+```sql
+BEGIN;
+
+UPDATE employees
+SET salary = salary * 1.10;
+
+COMMIT;
+```
+
+### Roll Back a Transaction
+
+```sql
+BEGIN;
+
+UPDATE employees
+SET salary = salary * 1.10;
+
+ROLLBACK;
+```
+
+### Using a Savepoint
+
+```sql
+BEGIN;
+
+UPDATE employees
+SET salary = 90000
+WHERE employee_id = 1;
+
+SAVEPOINT salary_update;
+
+DELETE FROM employees
+WHERE employee_id = 2;
+
+ROLLBACK TO salary_update;
+
+COMMIT;
+```
+
+---
+
+# SQL Command Categories at a Glance
+
+| Category | Full Name | Purpose | Common Commands |
+|----------|-----------|---------|-----------------|
+| **DDL** | Data Definition Language | Defines database objects | `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `RENAME` |
+| **DML** | Data Manipulation Language | Inserts, updates, and deletes data | `INSERT`, `UPDATE`, `DELETE`, `MERGE` |
+| **DQL** | Data Query Language | Retrieves data | `SELECT` |
+| **DCL** | Data Control Language | Manages permissions | `GRANT`, `REVOKE` |
+| **TCL** | Transaction Control Language | Manages transactions | `COMMIT`, `ROLLBACK`, `SAVEPOINT` |
+
+---
+# SET SEARCH_PATH in PostgreSQL
+
+## Overview
+
+`SET search_path` is a PostgreSQL command used to specify the schema(s) that PostgreSQL should search when you reference database objects such as tables, views, functions, or sequences without explicitly including the schema name.
+
+Instead of writing the schema name every time, PostgreSQL searches the schemas listed in the `search_path` in the order they are specified.
+
+---
+
+## Syntax
+
+```sql
+SET search_path TO schema_name;
+```
+
+To specify multiple schemas:
+
+```sql
+SET search_path TO schema1, schema2;
+```
+
+---
+
+## Why Use `SET search_path`?
+
+Using `SET search_path` makes SQL queries shorter and easier to read by eliminating the need to repeatedly specify the schema name.
+
+### Without `SET search_path`
+
+```sql
+SELECT *
+FROM staging.jobs;
+```
+
+```sql
+INSERT INTO staging.jobs (
+    job_id,
+    job_title
+)
+VALUES (
+    1,
+    'Data Analyst'
+);
+```
+
+---
+
+### With `SET search_path`
+
+```sql
+SET search_path TO staging;
+```
+
+Now the same queries become:
+
+```sql
+SELECT *
+FROM jobs;
+```
+
+```sql
+INSERT INTO jobs (
+    job_id,
+    job_title
+)
+VALUES (
+    1,
+    'Data Analyst'
+);
+```
+
+---
+
+## Example
+
+Suppose your database contains the following schemas:
+
+- `public`
+- `staging`
+- `production`
+
+If your `jobs` table exists in the `staging` schema:
+
+```sql
+SET search_path TO staging;
+
+SELECT *
+FROM jobs;
+```
+
+PostgreSQL automatically searches the `staging` schema and executes:
+
+```sql
+SELECT *
+FROM staging.jobs;
+```
+
+---
+
+## Using Multiple Schemas
+
+You can configure PostgreSQL to search multiple schemas in order.
+
+```sql
+SET search_path TO staging, public;
+```
+
+When you query:
+
+```sql
+SELECT * FROM jobs;
+```
+
+PostgreSQL first looks for the `jobs` table in the `staging` schema.
+
+If it is not found, PostgreSQL then searches the `public` schema.
+
+---
+
+## Viewing the Current Search Path
+
+To display the current search path:
+
+```sql
+SHOW search_path;
+```
+
+Example output:
+
+```text
+"$user", public
+```
+
+This means PostgreSQL first searches for a schema matching the current username. If none exists, it searches the `public` schema.
+
+---
+
+## Session Scope
+
+`SET search_path` only affects the current database session.
+
+Once you disconnect from PostgreSQL, the search path returns to its default value unless it has been permanently configured.
+
+---
+
+## Best Practices
+
+- Use `SET search_path` when working extensively within a single schema.
+- Include it at the beginning of SQL scripts for better readability.
+- Use schema-qualified table names (`schema.table`) when working with multiple schemas to avoid ambiguity.
+- Verify the current search path using `SHOW search_path` if queries return unexpected results.
+
+---
+
+## Summary
+
+| Command | Description |
+|---------|-------------|
+| `SET search_path TO schema_name;` | Sets the default schema for the current session. |
+| `SET search_path TO schema1, schema2;` | Searches multiple schemas in the specified order. |
+| `SHOW search_path;` | Displays the current search path. |
+
+---
+
+## Example Script
+
+```sql
+-- Set the default schema
+SET search_path TO staging;
+
+-- Retrieve all jobs
+SELECT *
+FROM jobs;
+
+-- Insert a new job
+INSERT INTO jobs (
+    job_id,
+    job_title_short,
+    job_location
+)
+VALUES (
+    5001,
+    'Data Analyst',
+    'Nairobi, Kenya'
+);
+
+-- Display the current search path
+SHOW search_path;
+```
+
+
+
+
+# SQL Command Workflow
+
+```text
+Create Database Objects
+        │
+        ▼
+      DDL
+        │
+        ▼
+Insert / Update / Delete Data
+        │
+        ▼
+      DML
+        │
+        ▼
+Retrieve Data
+        │
+        ▼
+      DQL
+        │
+        ▼
+Control User Permissions
+        │
+        ▼
+      DCL
+        │
+        ▼
+Manage Transactions
+        │
+        ▼
+      TCL
+```
+
+---
+
+# Best Practices
+
+- Use **DDL** only when changing the database structure.
+- Use **DML** to manipulate records without affecting the table structure.
+- Use **DQL** to retrieve only the data you need by filtering with `WHERE`.
+- Grant users only the permissions they require using **DCL** (Principle of Least Privilege).
+- Use **TCL** when performing multiple related operations to maintain data integrity.
+
+---
+
+# Summary
+
+| SQL Category | Purpose |
+|---------------|---------|
+| **DDL** | Defines and modifies database structures |
+| **DML** | Manipulates data within tables |
+| **DQL** | Retrieves data from tables |
+| **DCL** | Controls user access and permissions |
+| **TCL** | Manages transactions and ensures data consistency |
+
+
 
 # SQL Comparison Operators
 
