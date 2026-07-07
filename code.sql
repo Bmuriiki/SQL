@@ -1,26 +1,36 @@
-create schema if not exists digicity;
+create schema duka;
+ 
+set search_path to duka;
 
-set search_path to digicity;
-
-CREATE TABLE customers (
-    customer_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100),
-    email VARCHAR(100),
-    phone_number VARCHAR(20),
-    joined_on DATE
+create table duka_products(
+product_id SERIAL primary key,
+product_name VARCHAR(50) not null,
+category VARCHAR(30),
+price NUMERIC(8,2),
+quantity_in_stock INT
 );
+ 
+insert into duka_products(product_name, category, price, quantity_in_stock)
+values ('Unga wa ngano', 'Grains & Cereals', 180.00, 50),
+('Mchele Pishori', 'Grains & Cereals', 220.00, 40),
+('Sukari', 'Grains & Cereals', 150.00, 60),
+('Maziwa Fresh', 'Dairy', 60.00, 30),
+('Mtindi', 'Dairy', 90.00, 20),
+('Chai ya Majani', 'Beverages', 250.00, 25),
+('Soda', 'Beverages', 70.00, 45),
+('Sabuni ya kufulia', 'Household', 55.00, 35),
+('Mafuta ya Taa', 'Houshold', 120.00, 15),
+('Mkate', 'Snacks & Bakery', 65.00, 20);
 
-INSERT INTO customers (
-    full_name,
-    email,
-    phone_number,
-    joined_on
-)
-VALUES
-('Brian Muriiki', 'brian.muriiki@gmail.com', '+254701428898', '2025-07-06'),
-('Faith Wanjiku', 'faith.wanjiku@gmail.com', '+254712345601', '2025-02-15'),
-('John Kamau', 'john.kamau@gmail.com', '+254712345602', '2025-03-11'),
-('Mary Atieno', 'mary.atieno@gmail.com', '+254712345603', '2025-04-08'),
-('Peter Otieno', 'peter.otieno@gmail.com', '+254712345604', '2025-01-20'),
-('Grace Njeri', 'grace.njeri@gmail.com', '+254712345605', '2025-05-02'),
-('James Mwangi', 'james.mwangi@gmail.com', '+254712345606', '2025-06-18')
+--Selecting
+select *
+from duka_products
+
+--Adding a new column
+alter table duka_products
+add column supplier VARCHAR(100);
+
+--Updating the table
+update duka_products
+set supplier= 'Kenya Grain Miller'
+where category= 'Grains & Cereals';
