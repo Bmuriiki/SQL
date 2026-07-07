@@ -1,7 +1,10 @@
+--Creating schema
 create schema duka;
- 
+
+--Setting default search
 set search_path to duka;
 
+--Creating table
 create table duka_products(
 product_id SERIAL primary key,
 product_name VARCHAR(50) not null,
@@ -9,7 +12,9 @@ category VARCHAR(30),
 price NUMERIC(8,2),
 quantity_in_stock INT
 );
- 
+
+--Inserting data into the table
+
 insert into duka_products(product_name, category, price, quantity_in_stock)
 values ('Unga wa ngano', 'Grains & Cereals', 180.00, 50),
 ('Mchele Pishori', 'Grains & Cereals', 220.00, 40),
@@ -33,4 +38,23 @@ add column supplier VARCHAR(100);
 --Updating the table
 update duka_products
 set supplier= 'Kenya Grain Miller'
+
+ --Renaming column 
+alter table duka_products
+rename column quantity_in_stock to stock_level;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 where category= 'Grains & Cereals';
