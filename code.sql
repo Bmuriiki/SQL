@@ -38,16 +38,20 @@ add column supplier VARCHAR(100);
 --Updating the table
 update duka_products
 set supplier= 'Kenya Grain Miller'
+where category= 'Grains & Cereals';
 
  --Renaming column 
 alter table duka_products
 rename column quantity_in_stock to stock_level;
 
+--Changing number of characters
+alter table duka_products
+alter column product_name 
+type VARCHAR(100);
 
-
-
-
-
+--Dropping column
+alter table duka_products
+drop column discount_note;
 
 
 
@@ -57,4 +61,4 @@ rename column quantity_in_stock to stock_level;
 
 
  
-where category= 'Grains & Cereals';
+
