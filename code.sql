@@ -53,6 +53,13 @@ type VARCHAR(100);
 alter table duka_products
 drop column discount_note;
 
+--Deleting data
+delete from duka_products
+where product_name= 'Mafuta ya Taa';
+
+--Dropping tables
+drop table duka_products;
+
 
 
 
