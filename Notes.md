@@ -962,21 +962,400 @@ HAVING AVG(salary_year_avg) > 120000
 
 ---
 
-# Best Practices
+# SQL Joins
 
-- Use `WHERE` whenever possible because it filters data early, making queries more efficient.
-- Use `HAVING` only for filtering aggregated results.
-- Avoid using `HAVING` as a replacement for `WHERE`.
-- When both are needed, use `WHERE` first to reduce the dataset before grouping.
+## Introduction
+
+SQL joins are used to combine data from two or more tables based on a related column, typically a **Primary Key** and a **Foreign Key**. Joins are essential for retrieving meaningful information from relational databases by linking related records.
+
+For example:
+
+- A **customer** can have many **orders**.
+- An **employee** belongs to a **department**.
+- A **student** enrolls in multiple **courses**.
+
+Without joins, querying related information across multiple tables would be difficult.
 
 ---
 
-# Quick Reference
+# Sample Tables
 
-| Want to... | Use |
-|-------------|-----|
-| Filter rows before grouping | `WHERE` |
-| Filter grouped results | `HAVING` |
-| Filter by salary | `WHERE salary_year_avg > 80000` |
-| Filter by average salary | `HAVING AVG(salary_year_avg) > 80000` |
-| Filter by count of records | `HAVING COUNT(*) > 10` |
+### Customers
+
+| customer_id | customer_name |
+|-------------|---------------|
+| 1 | Alice |
+| 2 | Bob |
+| 3 | Carol |
+| 4 | David |
+
+### Orders
+
+| order_id | customer_id | product |
+|----------|-------------|----------|
+| 101 | 1 | Laptop |
+| 102 | 2 | Phone |
+| 103 | 2 | Mouse |
+| 104 | 5 | Tablet |
+
+Notice that:
+
+- Carol and David have not placed any orders.
+- Order **104** belongs to customer **5**, who does not exist in the Customers table.
+
+---
+
+# Types of SQL Joins
+
+| Join | Returns | Best Used When |
+|------|----------|----------------|
+| **INNER JOIN** | Only matching rows from both tables | You only need records that exist in both tables |
+| **LEFT JOIN** | All rows from the left table and matching rows from the right table | The left table is your primary table |
+| **RIGHT JOIN** | All rows from the right table and matching rows from the left table | The right table is your primary table |
+| **FULL OUTER JOIN** | All rows from both tables, matching where possible | You want every record from both tables |
+| **CROSS JOIN** | Every possible combination of rows | You need a Cartesian product |
+| **SELF JOIN** | A table joined to itself | The table contains hierarchical or recursive relationships |
+
+---
+
+# 1. INNER JOIN
+
+## Description
+
+An **INNER JOIN** returns only the rows that have matching values in both tables.
+
+### Syntax
+
+```sql
+SELECT columns
+FROM table1
+INNER JOIN table2
+ON table1.column = table2.column;
+```
+
+### Example
+
+```sql
+SELECT
+    c.customer_name,
+    o.product
+FROM customers c
+INNER JOIN orders o
+ON c.customer_id = o.customer_id;
+```
+
+### Result
+
+| customer_name | product |
+|--------------|----------|
+| Alice | Laptop |
+| Bob | Phone |
+| Bob | Mouse |
+
+### When to Use
+
+Use an **INNER JOIN** when you only need records that exist in both tables.
+
+Examples:
+
+- Customers who have placed orders
+- Employees assigned to departments
+- Students enrolled in courses
+
+---
+
+# 2. LEFT JOIN
+
+## Description
+
+A **LEFT JOIN** returns every row from the left table, along with matching rows from the right table. If no match exists, NULL values are returned for the right table.
+
+### Syntax
+
+```sql
+SELECT columns
+FROM table1
+LEFT JOIN table2
+ON table1.column = table2.column;
+```
+
+### Example
+
+```sql
+SELECT
+    c.customer_name,
+    o.product
+FROM customers c
+LEFT JOIN orders o
+ON c.customer_id = o.customer_id;
+```
+
+### Result
+
+| customer_name | product |
+|--------------|----------|
+| Alice | Laptop |
+| Bob | Phone |
+| Bob | Mouse |
+| Carol | NULL |
+| David | NULL |
+
+### When to Use
+
+Use a **LEFT JOIN** when the left table contains all the records you want to keep.
+
+Examples:
+
+- All customers, including those without orders
+- All employees, even if they are not assigned to a project
+- All products, including those never sold
+
+---
+
+# 3. RIGHT JOIN
+
+## Description
+
+A **RIGHT JOIN** returns every row from the right table and matching rows from the left table. If there is no match, NULL values are returned for the left table.
+
+### Syntax
+
+```sql
+SELECT columns
+FROM table1
+RIGHT JOIN table2
+ON table1.column = table2.column;
+```
+
+### Example
+
+```sql
+SELECT
+    c.customer_name,
+    o.product
+FROM customers c
+RIGHT JOIN orders o
+ON c.customer_id = o.customer_id;
+```
+
+### Result
+
+| customer_name | product |
+|--------------|----------|
+| Alice | Laptop |
+| Bob | Phone |
+| Bob | Mouse |
+| NULL | Tablet |
+
+### When to Use
+
+Use a **RIGHT JOIN** when every row from the right table should be included.
+
+Examples:
+
+- All orders, even if customer information is missing
+- All payments, even if the customer record has been deleted
+
+> **Tip:** Most SQL developers prefer using `LEFT JOIN` by reversing the table order instead of using `RIGHT JOIN`.
+
+---
+
+# 4. FULL OUTER JOIN
+
+## Description
+
+A **FULL OUTER JOIN** returns all rows from both tables. Matching rows are combined, while unmatched rows contain NULL values.
+
+### Syntax
+
+```sql
+SELECT columns
+FROM table1
+FULL OUTER JOIN table2
+ON table1.column = table2.column;
+```
+
+### Example
+
+```sql
+SELECT
+    c.customer_name,
+    o.product
+FROM customers c
+FULL OUTER JOIN orders o
+ON c.customer_id = o.customer_id;
+```
+
+### Result
+
+| customer_name | product |
+|--------------|----------|
+| Alice | Laptop |
+| Bob | Phone |
+| Bob | Mouse |
+| Carol | NULL |
+| David | NULL |
+| NULL | Tablet |
+
+### When to Use
+
+Use a **FULL OUTER JOIN** when you want every record from both tables.
+
+Examples:
+
+- Data reconciliation
+- Identifying unmatched records
+- Comparing datasets after migration
+
+---
+
+# 5. CROSS JOIN
+
+## Description
+
+A **CROSS JOIN** returns the Cartesian product of two tables. Every row from the first table is paired with every row from the second table.
+
+### Syntax
+
+```sql
+SELECT columns
+FROM table1
+CROSS JOIN table2;
+```
+
+### Example
+
+```sql
+SELECT
+    c.customer_name,
+    o.product
+FROM customers c
+CROSS JOIN orders o;
+```
+
+### Result
+
+| customer_name | product |
+|--------------|----------|
+| Alice | Laptop |
+| Alice | Phone |
+| Alice | Mouse |
+| Alice | Tablet |
+| Bob | Laptop |
+| Bob | Phone |
+| ... | ... |
+
+With **4 customers** and **4 orders**, the query returns **16 rows**.
+
+### When to Use
+
+Use a **CROSS JOIN** when you need every possible combination of records.
+
+Examples:
+
+- Product and color combinations
+- Product and size combinations
+- Scheduling
+- Test data generation
+
+---
+
+# 6. SELF JOIN
+
+## Description
+
+A **SELF JOIN** joins a table to itself using table aliases.
+
+### Employees Table
+
+| employee_id | employee_name | manager_id |
+|-------------|---------------|------------|
+| 1 | John | NULL |
+| 2 | Mary | 1 |
+| 3 | Peter | 1 |
+| 4 | James | 2 |
+
+### Example
+
+```sql
+SELECT
+    e.employee_name AS employee,
+    m.employee_name AS manager
+FROM employees e
+LEFT JOIN employees m
+ON e.manager_id = m.employee_id;
+```
+
+### Result
+
+| employee | manager |
+|----------|----------|
+| John | NULL |
+| Mary | John |
+| Peter | John |
+| James | Mary |
+
+### When to Use
+
+Use a **SELF JOIN** whenever rows within the same table are related.
+
+Examples:
+
+- Employees and managers
+- Categories and parent categories
+- Organizational structures
+- Comment threads
+
+---
+
+# SQL Join Summary
+
+| Join Type | Returns | Common Use Case |
+|-----------|----------|----------------|
+| **INNER JOIN** | Matching rows only | Customers with orders |
+| **LEFT JOIN** | All rows from the left table | Customers with or without orders |
+| **RIGHT JOIN** | All rows from the right table | Orders with or without customers |
+| **FULL OUTER JOIN** | All rows from both tables | Finding unmatched records |
+| **CROSS JOIN** | Every possible combination | Product variations |
+| **SELF JOIN** | A table joined to itself | Employee-manager relationships |
+
+---
+
+# Join Comparison Diagram
+
+```text
+              SQL JOINS
+
+          Table A      Table B
+
+INNER JOIN
+        A ∩ B
+
+LEFT JOIN
+    A + (A ∩ B)
+
+RIGHT JOIN
+    (A ∩ B) + B
+
+FULL OUTER JOIN
+       A ∪ B
+
+CROSS JOIN
+Every row in A × Every row in B
+
+SELF JOIN
+Table A joined with itself
+```
+
+---
+
+# Key Takeaways
+
+- Use **INNER JOIN** to retrieve only matching records.
+- Use **LEFT JOIN** to keep all rows from the left table.
+- Use **RIGHT JOIN** to keep all rows from the right table.
+- Use **FULL OUTER JOIN** to retrieve every row from both tables.
+- Use **CROSS JOIN** to generate all possible combinations.
+- Use **SELF JOIN** to query hierarchical relationships within the same table.
+
+Mastering SQL joins is fundamental for querying relational databases, as they enable you to combine data efficiently and answer complex business questions.
