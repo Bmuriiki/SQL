@@ -1358,4 +1358,50 @@ Table A joined with itself
 - Use **CROSS JOIN** to generate all possible combinations.
 - Use **SELF JOIN** to query hierarchical relationships within the same table.
 
-Mastering SQL joins is fundamental for querying relational databases, as they enable you to combine data efficiently and answer complex business questions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
