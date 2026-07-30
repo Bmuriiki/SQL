@@ -1358,6 +1358,241 @@ Table A joined with itself
 - Use **CROSS JOIN** to generate all possible combinations.
 - Use **SELF JOIN** to query hierarchical relationships within the same table.
 
+# Common Table Expressions (CTEs) in SQL
+
+## Introduction
+
+A **Common Table Expression (CTE)** is a temporary named result set defined using the `WITH` clause. It exists only for the execution of a single SQL statement and is used to simplify complex queries by breaking them into smaller, more manageable parts.
+
+Unlike permanent tables or views, a CTE is not stored in the database. It is created at the start of a query and automatically discarded once the query finishes executing.
+
+---
+
+# Syntax
+
+```sql
+WITH cte_name AS (
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition
+)
+SELECT *
+FROM cte_name;
+```
+
+---
+
+# Example
+
+The following example retrieves employees whose salary is greater than KES 100,000.
+
+```sql
+WITH HighSalaryEmployees AS (
+    SELECT employee_id,
+           employee_name,
+           salary
+    FROM employees
+    WHERE salary > 100000
+)
+
+SELECT *
+FROM HighSalaryEmployees;
+```
+
+---
+
+# Why Use a CTE?
+
+Although a CTE often produces the same result as a subquery, it provides several advantages when writing SQL.
+
+## 1. Improves Readability
+
+Complex SQL statements can become difficult to understand when multiple nested subqueries are used. A CTE separates the logic into meaningful steps, making the query easier to read and maintain.
+
+**Without a CTE**
+
+```sql
+SELECT department,
+       AVG(salary) AS average_salary
+FROM (
+    SELECT department,
+           salary
+    FROM employees
+    WHERE salary > 50000
+) AS employee_data
+GROUP BY department;
+```
+
+**With a CTE**
+
+```sql
+WITH employee_data AS (
+    SELECT department,
+           salary
+    FROM employees
+    WHERE salary > 50000
+)
+
+SELECT department,
+       AVG(salary) AS average_salary
+FROM employee_data
+GROUP BY department;
+```
+
+---
+
+## 2. Eliminates Repeated Logic
+
+If the same dataset is required multiple times within a query, a CTE allows the filtering or transformation logic to be written once and referenced repeatedly.
+
+```sql
+WITH high_salary AS (
+    SELECT *
+    FROM employees
+    WHERE salary > 50000
+)
+
+SELECT
+    COUNT(*) AS total_employees,
+    AVG(salary) AS average_salary
+FROM high_salary;
+```
+
+This reduces duplication and makes future modifications easier.
+
+---
+
+## 3. Simplifies Complex Queries
+
+Multiple CTEs can be chained together to create step-by-step transformations.
+
+```sql
+WITH monthly_sales AS (
+
+    SELECT
+        month,
+        SUM(sales_amount) AS total_sales
+    FROM sales
+    GROUP BY month
+
+),
+
+ranked_sales AS (
+
+    SELECT
+        month,
+        total_sales,
+        RANK() OVER (ORDER BY total_sales DESC) AS sales_rank
+    FROM monthly_sales
+
+)
+
+SELECT *
+FROM ranked_sales
+WHERE sales_rank <= 3;
+```
+
+Breaking the query into stages makes it much easier to understand and debug.
+
+---
+
+## 4. Supports Recursive Queries
+
+Recursive CTEs are designed to work with hierarchical data such as:
+
+* Employee-manager relationships
+* Organizational structures
+* Folder hierarchies
+* Product categories
+* Family trees
+
+Example:
+
+```sql
+WITH RECURSIVE numbers AS (
+
+    SELECT 1 AS number
+
+    UNION ALL
+
+    SELECT number + 1
+    FROM numbers
+    WHERE number < 5
+
+)
+
+SELECT *
+FROM numbers;
+```
+
+**Result**
+
+| number |
+| -----: |
+|      1 |
+|      2 |
+|      3 |
+|      4 |
+|      5 |
+
+---
+
+# CTE vs. Subquery
+
+| Feature                   | CTE  | Subquery        |
+| ------------------------- | ---- | --------------- |
+| Readability               | High | Moderate to Low |
+| Reusable within the query | Yes  | No              |
+| Supports recursion        | Yes  | No              |
+| Ideal for complex queries | Yes  | Limited         |
+| Temporary                 | Yes  | Yes             |
+
+---
+
+# Performance Considerations
+
+A common misconception is that CTEs automatically improve query performance. In reality, they are primarily a readability and maintainability feature.
+
+Modern database systems such as PostgreSQL, SQL Server, MySQL 8+, and Oracle often optimize CTEs similarly to subqueries. Therefore, choosing between a CTE and a subquery should generally be based on code clarity rather than performance.
+
+For performance tuning, always analyze the query execution plan rather than assuming a CTE will execute faster.
+
+---
+
+# Best Practices
+
+* Use descriptive CTE names that clearly indicate their purpose.
+* Keep each CTE focused on a single transformation.
+* Chain multiple CTEs to simplify complex business logic.
+* Avoid unnecessary CTEs for simple queries.
+* Use recursive CTEs only when working with hierarchical or recursive data.
+
+---
+
+# When to Use a CTE
+
+Use a CTE when:
+
+* Simplifying complex SQL queries.
+* Reusing the same intermediate result multiple times.
+* Organizing queries into logical steps.
+* Working with window functions.
+* Writing recursive queries.
+
+Avoid using a CTE when a simple `SELECT` statement is sufficient and readability is not improved.
+
+---
+
+# Key Takeaways
+
+* A **Common Table Expression (CTE)** is a temporary named result set created using the `WITH` clause.
+* CTEs improve the readability, organization, and maintainability of SQL queries.
+* They eliminate repeated query logic by allowing intermediate results to be referenced multiple times.
+* Multiple CTEs can be chained together to build complex data transformations in a clear and structured manner.
+* Recursive CTEs are the preferred solution for querying hierarchical data.
+* CTEs are designed to make SQL easier to write and maintain, not necessarily faster to execute.
+
+> **Interview Tip:** A Common Table Expression (CTE) is a temporary named result set defined with the `WITH` clause that simplifies complex SQL queries by breaking them into logical, reusable steps within a single SQL statement.
 
 
 
