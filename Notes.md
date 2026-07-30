@@ -1737,6 +1737,229 @@ Avoid CTAS when:
 > **Interview Tip:** **CREATE TABLE AS (CTAS)** is a SQL statement that creates a new table using the results of a `SELECT` query. It is commonly used in data engineering to materialize filtered or transformed datasets for future analysis and reporting.
 
 
+# Views in SQL
+
+## Introduction
+
+A **View** is a virtual table created from the result of a SQL query. Unlike a regular table, a view does **not** store data itself. Instead, it stores the SQL query used to retrieve the data. Each time the view is queried, the database executes the underlying query and returns the latest data from the base table(s).
+
+Views are commonly used to simplify complex queries, enhance security, and provide a consistent interface for accessing data.
+
+---
+
+# Syntax
+
+```sql
+CREATE VIEW view_name AS
+SELECT column1, column2, ...
+FROM table_name
+WHERE condition;
+```
+
+---
+
+# Example
+
+The following query creates a view containing Data Engineer job postings located in Kenya.
+
+```sql
+CREATE VIEW data_role.data_engineering_jobs_kenya_view AS
+SELECT *
+FROM data_role.jobs
+WHERE job_title_short = 'Data Engineer'
+  AND job_country = 'Kenya';
+```
+
+---
+
+# Explanation
+
+### Step 1: Create the View
+
+```sql
+CREATE VIEW data_role.data_engineering_jobs_kenya_view AS
+```
+
+This statement creates a view named **`data_engineering_jobs_kenya_view`** in the **`data_role`** schema.
+
+Unlike a table, the view stores only the SQL query, not the actual data.
+
+---
+
+### Step 2: Retrieve Data
+
+```sql
+SELECT *
+FROM data_role.jobs
+```
+
+This retrieves all columns from the **`jobs`** table.
+
+---
+
+### Step 3: Filter the Data
+
+```sql
+WHERE job_title_short = 'Data Engineer'
+  AND job_country = 'Kenya';
+```
+
+Only rows that satisfy both conditions are included whenever the view is queried.
+
+---
+
+# Querying a View
+
+Once the view has been created, it can be queried just like a regular table.
+
+```sql
+SELECT *
+FROM data_role.data_engineering_jobs_kenya_view;
+```
+
+The database executes the stored query and returns the latest matching records from the `jobs` table.
+
+---
+
+# How Views Work
+
+When you create a view:
+
+1. SQL stores the query definition.
+2. No data is copied into the view.
+3. Every time the view is queried, the database executes the stored query.
+4. Any changes made to the underlying table are automatically reflected in the view.
+
+---
+
+# Advantages of Views
+
+## 1. Simplifies Complex Queries
+
+Views hide complicated SQL statements behind a simple table-like interface.
+
+Instead of repeatedly writing:
+
+```sql
+SELECT *
+FROM data_role.jobs
+WHERE job_title_short = 'Data Engineer'
+  AND job_country = 'Kenya';
+```
+
+You simply write:
+
+```sql
+SELECT *
+FROM data_role.data_engineering_jobs_kenya_view;
+```
+
+---
+
+## 2. Improves Security
+
+Views can expose only selected columns while hiding sensitive information.
+
+Example:
+
+```sql
+CREATE VIEW employee_public AS
+SELECT employee_id,
+       employee_name,
+       department
+FROM employees;
+```
+
+Users can access employee information without seeing confidential salary data.
+
+---
+
+## 3. Promotes Code Reusability
+
+Frequently used queries can be stored once and reused by multiple users and applications.
+
+---
+
+## 4. Always Shows Current Data
+
+Since a view retrieves data directly from the underlying tables, it always reflects the most recent updates.
+
+If a new Data Engineer job in Kenya is inserted into the `jobs` table, it automatically appears in the view.
+
+---
+
+# Limitations of Views
+
+* Views do not store data (except materialized views).
+* Complex views may execute more slowly than querying a physical table.
+* Some views cannot be updated, especially those containing joins, aggregations, or `GROUP BY` clauses.
+* Dropping an underlying table can invalidate dependent views.
+
+---
+
+# View vs. CTAS
+
+| Feature                                     | View  | CTAS  |
+| ------------------------------------------- | ----- | ----- |
+| Stores data                                 | ❌ No  | ✅ Yes |
+| Stores query definition                     | ✅ Yes | ❌ No  |
+| Automatically reflects source table changes | ✅ Yes | ❌ No  |
+| Creates a permanent object                  | ✅ Yes | ✅ Yes |
+| Best for reusable queries                   | ✅ Yes | ❌ No  |
+| Best for storing transformed data           | ❌ No  | ✅ Yes |
+
+---
+
+# View vs. CTE
+
+| Feature            | View                      | CTE                          |
+| ------------------ | ------------------------- | ---------------------------- |
+| Lifetime           | Permanent database object | Exists for one SQL statement |
+| Stores data        | ❌ No                      | ❌ No                         |
+| Reusable           | ✅ Yes                     | Only within one query        |
+| Uses `CREATE VIEW` | ✅ Yes                     | ❌ No                         |
+| Uses `WITH`        | ❌ No                      | ✅ Yes                        |
+
+---
+
+# Best Practices
+
+* Use descriptive view names.
+* Select only the columns that users need.
+* Avoid using `SELECT *` in production views.
+* Document the purpose of each view.
+* Keep view logic simple for better performance.
+* Use views to hide sensitive columns from end users.
+
+---
+
+# When to Use Views
+
+Use views when:
+
+* Simplifying complex SQL queries.
+* Restricting access to sensitive data.
+* Providing a consistent interface for reporting.
+* Reusing frequently executed queries.
+* Abstracting underlying table structures from users.
+
+Avoid using views when:
+
+* High-performance access to precomputed data is required (consider materialized views or CTAS).
+* You need to store a snapshot of the data.
+
+---
+
+# Key Takeaways
+
+* A **View** is a virtual table created from a SQL query.
+* Views do not store data; they store only the query definition.
+* They always return the latest data from the underlying tables.
+* Views improve readability, security, and code reusability.
+* They are commonly used in reporting, dashboards, and analytics to simplify data access.
+
+> **Interview Tip:** A **View** is a virtual table that stores a SQL query rather than data. It provides a simplified and secure way to access data while always reflecting the latest changes in the underlying tables.
+
 
 
 
