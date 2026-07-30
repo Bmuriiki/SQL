@@ -1595,6 +1595,146 @@ Avoid using a CTE when a simple `SELECT` statement is sufficient and readability
 > **Interview Tip:** A Common Table Expression (CTE) is a temporary named result set defined with the `WITH` clause that simplifies complex SQL queries by breaking them into logical, reusable steps within a single SQL statement.
 
 
+# CREATE TABLE AS (CTAS) in SQL
+
+## Introduction
+
+**CREATE TABLE AS (CTAS)** is a SQL statement used to create a new table from the results of a `SELECT` query. The new table is created automatically using the columns returned by the query and is immediately populated with the selected data.
+
+CTAS is widely used in data engineering, data warehousing, and ETL/ELT pipelines to create staging tables, reporting tables, backup tables, and transformed datasets.
+
+Unlike a **Common Table Expression (CTE)**, which is temporary and exists only during query execution, a CTAS table is permanently stored in the database until it is explicitly dropped.
+
+---
+
+# Syntax
+
+```sql
+CREATE TABLE new_table AS
+SELECT column1, column2, ...
+FROM existing_table
+WHERE condition;
+```
+
+---
+
+# Example
+
+The following query creates a new table containing only Data Engineer job postings located in Kenya.
+
+```sql
+CREATE TABLE data_role.data_engineering_jobs_kenya AS
+SELECT *
+FROM data_role.jobs
+WHERE job_title_short = 'Data Engineer'
+  AND job_country = 'Kenya';
+```
+
+---
+# Result
+
+After the query executes successfully, a new permanent table named **`data_role.data_engineering_jobs_kenya`** is created.
+
+The table contains:
+
+* The same columns as the original `jobs` table.
+* Only rows where:
+
+  * `job_title_short = 'Data Engineer'`
+  * `job_country = 'Kenya'`
+
+You can query the new table like any other table.
+
+```sql
+SELECT *
+FROM data_role.data_engineering_jobs_kenya;
+```
+
+---
+
+# Advantages of CTAS
+
+## 1. Creates and Populates a Table in One Step
+
+CTAS combines table creation and data insertion into a single SQL statement.
+
+---
+
+## 2. Simplifies Data Transformation
+
+Filtered or transformed datasets can be saved as new tables for future analysis.
+
+---
+
+## 3. Improves ETL/ELT Workflows
+
+CTAS is commonly used to create:
+
+* Staging tables
+* Intermediate transformation tables
+* Reporting tables
+* Data marts
+* Backup tables
+
+---
+
+## 4. Reduces Repetitive Queries
+
+Instead of repeatedly filtering the same dataset, the filtered results can be stored once and queried whenever needed.
+
+---
+
+# CTAS vs. CTE
+
+| Feature                      | CTAS  | CTE   |
+| ---------------------------- | ----- | ----- |
+| Creates a new table          | ✅ Yes | ❌ No  |
+| Stores data permanently      | ✅ Yes | ❌ No  |
+| Uses `CREATE TABLE AS`       | ✅ Yes | ❌ No  |
+| Uses `WITH` clause           | ❌ No  | ✅ Yes |
+| Exists after query execution | ✅ Yes | ❌ No  |
+| Best for data storage        | ✅ Yes | ❌ No  |
+| Best for simplifying queries | ❌ No  | ✅ Yes |
+
+---
+
+# Best Practices
+
+* Use meaningful table names that describe the data.
+* Select only the required columns instead of using `SELECT *` when possible.
+* Apply filters to reduce unnecessary data.
+* Add indexes after creating the table if the data will be queried frequently.
+* Verify that the destination table does not already exist before executing the statement.
+
+---
+
+# When to Use CTAS
+
+Use CTAS when:
+
+* Creating staging tables for ETL/ELT pipelines.
+* Building reporting tables.
+* Creating data marts.
+* Saving the results of complex queries.
+* Creating backup or snapshot tables.
+* Materializing transformed datasets for repeated analysis.
+
+Avoid CTAS when:
+
+* You only need a temporary result within a single query. In that case, use a **CTE**.
+* You need to define constraints (such as `PRIMARY KEY`, `FOREIGN KEY`, or `CHECK`) during table creation, since many databases do not automatically copy them.
+
+---
+
+# Key Takeaways
+
+* **CTAS (CREATE TABLE AS SELECT)** creates a new table and populates it with data from a `SELECT` query in a single statement.
+* The created table is permanently stored in the database until it is dropped.
+* CTAS is widely used in data engineering for staging tables, reporting tables, and transformed datasets.
+* It simplifies ETL/ELT workflows by materializing query results for reuse.
+* Unlike a CTE, which is temporary, a CTAS table persists after the query has finished executing.
+
+> **Interview Tip:** **CREATE TABLE AS (CTAS)** is a SQL statement that creates a new table using the results of a `SELECT` query. It is commonly used in data engineering to materialize filtered or transformed datasets for future analysis and reporting.
 
 
 
