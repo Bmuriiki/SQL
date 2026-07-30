@@ -1961,6 +1961,246 @@ Avoid using views when:
 > **Interview Tip:** A **View** is a virtual table that stores a SQL query rather than data. It provides a simplified and secure way to access data while always reflecting the latest changes in the underlying tables.
 
 
+# Difference Between CTE, CTAS, and Views in SQL
+
+## Introduction
+
+**CTE (Common Table Expression)**, **CTAS (Create Table As Select)**, and **Views** are SQL features used to organize, transform, and access data. Although they all work with the results of a `SELECT` query, they serve different purposes and have different lifecycles.
+
+Understanding when to use each is an important skill in SQL, data engineering, and business intelligence.
+
+---
+
+# 1. Common Table Expression (CTE)
+
+A **Common Table Expression (CTE)** is a temporary named result set created using the `WITH` clause. It exists only during the execution of a single SQL statement.
+
+### Example
+
+```sql
+WITH data_engineering_jobs AS (
+    SELECT *
+    FROM data_role.jobs
+    WHERE job_title_short = 'Data Engineer'
+)
+
+SELECT *
+FROM data_engineering_jobs;
+```
+
+### Characteristics
+
+* Temporary.
+* Exists only for one SQL query.
+* Does not store data.
+* Improves query readability.
+* Can be referenced multiple times within the same query.
+* Supports recursive queries.
+
+### When to Use a CTE
+
+Use a CTE when:
+
+* Simplifying complex SQL queries.
+* Breaking a query into logical steps.
+* Eliminating repeated subqueries.
+* Working with window functions.
+* Writing recursive queries.
+
+### When Not to Use a CTE
+
+Do not use a CTE when you need to permanently save data or reuse the result across multiple queries.
+
+---
+
+# 2. CREATE TABLE AS (CTAS)
+
+**CTAS (CREATE TABLE AS SELECT)** creates a new physical table from the results of a `SELECT` query.
+
+### Example
+
+```sql
+CREATE TABLE data_role.data_engineering_jobs_kenya AS
+SELECT *
+FROM data_role.jobs
+WHERE job_title_short = 'Data Engineer'
+  AND job_country = 'Kenya';
+```
+
+### Characteristics
+
+* Creates a permanent table.
+* Stores data physically in the database.
+* Executes once during table creation.
+* The data remains unchanged until it is updated or recreated.
+
+### When to Use CTAS
+
+Use CTAS when:
+
+* Creating staging tables.
+* Building data warehouse tables.
+* Saving transformed datasets.
+* Creating backup tables.
+* Creating data marts.
+* Materializing query results for faster reuse.
+
+### When Not to Use CTAS
+
+Avoid CTAS when the data changes frequently and you always need the latest version, since the table is only updated when you explicitly refresh or recreate it.
+
+---
+
+# 3. Views
+
+A **View** is a virtual table created from a SQL query. It stores only the query definition, not the data.
+
+### Example
+
+```sql
+CREATE VIEW data_role.data_engineering_jobs_kenya_view AS
+SELECT *
+FROM data_role.jobs
+WHERE job_title_short = 'Data Engineer'
+  AND job_country = 'Kenya';
+```
+
+### Characteristics
+
+* Permanent database object.
+* Does not store data.
+* Stores only the SQL query.
+* Always returns the latest data from the underlying table.
+* Can be queried like a regular table.
+
+### When to Use Views
+
+Use views when:
+
+* Creating reusable queries.
+* Simplifying reporting.
+* Providing secure access to selected columns.
+* Connecting reporting tools such as Power BI or Tableau.
+* Hiding the complexity of joins and filters.
+
+### When Not to Use Views
+
+Avoid views when you need to store a snapshot of data or improve performance by materializing query results.
+
+---
+
+# Comparison
+
+| Feature                            | CTE                  | CTAS          | View          |
+| ---------------------------------- | -------------------- | ------------- | ------------- |
+| Stores data                        | ❌ No                 | ✅ Yes         | ❌ No          |
+| Creates a permanent object         | ❌ No                 | ✅ Yes         | ✅ Yes         |
+| Lifetime                           | Single SQL statement | Until dropped | Until dropped |
+| Stores query definition            | ❌ No                 | ❌ No          | ✅ Yes         |
+| Always reflects latest source data | ❌ No                 | ❌ No          | ✅ Yes         |
+| Best for complex queries           | ✅ Yes                | ❌ No          | ✅ Yes         |
+| Best for data storage              | ❌ No                 | ✅ Yes         | ❌ No          |
+| Reusable across multiple queries   | ❌ No                 | ✅ Yes         | ✅ Yes         |
+
+---
+
+# Real-World Example
+
+Imagine you have a table containing one million job postings.
+
+## Scenario 1: You want to simplify one complex query.
+
+Use a **CTE**.
+
+```text
+Jobs Table
+      │
+      ▼
+CTE
+      │
+      ▼
+Query Result
+```
+
+The CTE disappears immediately after the query finishes.
+
+---
+
+## Scenario 2: You want to permanently save all Data Engineer jobs in Kenya.
+
+Use **CTAS**.
+
+```text
+Jobs Table
+      │
+      ▼
+CTAS
+      │
+      ▼
+New Physical Table
+```
+
+The new table remains in the database until it is dropped.
+
+---
+
+## Scenario 3: You want Power BI to always display the latest Data Engineer jobs in Kenya.
+
+Use a **View**.
+
+```text
+Jobs Table
+      │
+      ▼
+View
+      │
+      ▼
+Power BI Dashboard
+```
+
+Whenever Power BI refreshes the data, the view retrieves the latest records from the `jobs` table.
+
+---
+
+# Which One Should You Use?
+
+### Use a CTE when...
+
+* You need a temporary result.
+* You want to simplify a complex SQL query.
+* You only need the data for one query.
+
+---
+
+### Use CTAS when...
+
+* You want to permanently save the results of a query.
+* You are creating staging tables.
+* You are building ETL/ELT pipelines.
+* You want to create a snapshot of the data.
+
+---
+
+### Use a View when...
+
+* Multiple users or applications need the same query.
+* You want reports to always show the latest data.
+* You are connecting BI tools such as Power BI, Tableau, or Looker.
+* You want to simplify data access or restrict access to sensitive columns.
+
+---
+
+# Summary
+
+Think of these three SQL features as serving different purposes:
+
+* **CTE** → A temporary workspace used while writing a single query.
+* **CTAS** → A tool for creating and storing a new physical table.
+* **View** → A reusable virtual table that always retrieves the latest data.
+
+Choosing the right one depends on whether you need a temporary result, a permanent copy of the data, or a reusable query that always reflects the current state of the underlying tables.
+
+> **Interview Tip:** If you're writing a complex query, use a **CTE**. If you need to save query results as a new table, use **CTAS**. If you need a reusable query that always returns the latest data and can be shared with reporting tools, use a **View**.
 
 
 
