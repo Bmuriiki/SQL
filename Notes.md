@@ -2204,7 +2204,505 @@ Choosing the right one depends on whether you need a temporary result, a permane
 
 
 
+# SQL Window Functions
 
+## Overview
+
+Window functions perform calculations across a set of rows related to the current row **without collapsing the result set**. Unlike `GROUP BY`, window functions preserve every row while adding calculated values.
+
+This project demonstrates the most commonly used SQL window functions using a sample employee sales dataset in **BigQuery**.
+
+Dataset used:
+
+```sql
+SELECT *
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+---
+
+# Window Function Syntax
+
+Every window function uses the `OVER()` clause.
+
+General syntax:
+
+```sql
+window_function(expression)
+OVER(
+    PARTITION BY column_name
+    ORDER BY column_name
+)
+```
+
+The `OVER()` clause defines the **window** over which the calculation is performed.
+
+---
+
+# OVER()
+
+The simplest window function.
+
+Calculates a value over the **entire table** while keeping every row.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    department,
+    sales,
+    AVG(sales) OVER() AS company_average
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Result:
+
+|Employee|Sales|Company Average|
+|---------|----:|--------------:|
+|Alice|1200|1493.67|
+|Bob|1800|1493.67|
+|Carol|1800|1493.67|
+
+### Key Points
+
+- Uses the whole table as one window.
+- Does **not** reduce rows.
+- Different from `GROUP BY`, which returns one row per group.
+
+---
+
+# PARTITION BY
+
+`PARTITION BY` divides the data into smaller groups before applying the window function.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    department,
+    sales,
+    AVG(sales) OVER(PARTITION BY department) AS department_average
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Each department receives its own average.
+
+Example:
+
+|Department|Average|
+|-----------|-------:|
+|Electronics|2040|
+|Furniture|1460|
+|Clothing|981|
+
+### Key Points
+
+- Similar to `GROUP BY`
+- Keeps all rows
+- Resets calculations for each partition
+
+---
+
+# ORDER BY
+
+Defines the order in which rows are processed inside the window.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    ROW_NUMBER() OVER(ORDER BY sales DESC) AS row_num
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+### Key Points
+
+- Required for ranking functions.
+- Required for running totals.
+- Required for `LAG()` and `LEAD()`.
+- Determines row sequence inside the window.
+
+---
+
+# ROW_NUMBER()
+
+Assigns a **unique** sequential number to every row.
+
+Even when values are tied, each row gets a different number.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    ROW_NUMBER() OVER(
+        ORDER BY sales DESC, employee_name ASC
+    ) AS row_num
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example output:
+
+|Employee|Sales|Row Number|
+|---------|----:|---------:|
+|Zack|2800|1|
+|Tom|2600|2|
+|Bob|1800|8|
+|Carol|1800|9|
+|Wendy|1800|10|
+
+### Use Cases
+
+- Top N analysis
+- Pagination
+- Removing duplicate records
+- Assigning unique rankings
+
+---
+
+# Top N Employees
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    ROW_NUMBER() OVER(
+        ORDER BY sales DESC,
+        employee_name
+    ) AS row_num
+FROM `sixth-impulse-391307.window.practice`
+ORDER BY row_num
+LIMIT 5;
+```
+
+Returns the top five highest-performing employees.
+
+---
+
+# RANK()
+
+Assigns the same rank to tied values.
+
+The next rank skips numbers.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    RANK() OVER(
+        ORDER BY sales DESC
+    ) AS sales_rank
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+|Sales|Rank|
+|----:|---:|
+|2800|1|
+|2600|2|
+|1800|8|
+|1800|8|
+|1800|8|
+|1750|11|
+
+Notice that after three employees share rank **8**, the next rank is **11**.
+
+---
+
+# DENSE_RANK()
+
+Similar to `RANK()`, except no numbers are skipped.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    DENSE_RANK() OVER(
+        ORDER BY sales DESC
+    ) AS dense_rank
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+|Sales|Dense Rank|
+|----:|---------:|
+|2800|1|
+|2600|2|
+|1800|8|
+|1800|8|
+|1800|8|
+|1750|9|
+
+---
+
+# ROW_NUMBER() vs RANK() vs DENSE_RANK()
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    ROW_NUMBER() OVER(ORDER BY sales DESC) AS row_number,
+    RANK() OVER(ORDER BY sales DESC) AS rank,
+    DENSE_RANK() OVER(ORDER BY sales DESC) AS dense_rank
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+|Function|Duplicate Values|Skips Numbers|
+|----------|---------------|-------------|
+|ROW_NUMBER()|❌ No|❌ No|
+|RANK()|✅ Yes|✅ Yes|
+|DENSE_RANK()|✅ Yes|❌ No|
+
+---
+
+# SUM() OVER()
+
+Calculates the total across the entire table.
+
+```sql
+SELECT
+    employee_name,
+    department,
+    sales,
+    SUM(sales) OVER() AS total_company_sales
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Result:
+
+Every employee receives the same company total.
+
+```
+44810
+```
+
+---
+
+# SUM() OVER(PARTITION BY)
+
+Calculates totals within each department.
+
+```sql
+SELECT
+    employee_name,
+    department,
+    sales,
+    SUM(sales) OVER(
+        PARTITION BY department
+    ) AS total_department_sales
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Department totals:
+
+|Department|Total Sales|
+|-----------|----------:|
+|Electronics|20400|
+|Furniture|14600|
+|Clothing|9810|
+
+---
+
+# Running Totals
+
+Calculates cumulative totals over time.
+
+```sql
+SELECT
+    sale_date,
+    sales,
+    SUM(sales) OVER(
+        ORDER BY sale_date,
+        employee_name
+    ) AS sales_running_total
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+|Date|Sales|Running Total|
+|----|----:|------------:|
+|2025-01-01|1200|1200|
+|2025-01-01|900|2100|
+|2025-01-01|700|2800|
+
+### Key Concept
+
+Running totals require an `ORDER BY` clause because SQL needs to know the sequence of rows.
+
+---
+
+# LAG()
+
+Returns a value from a previous row.
+
+Example:
+
+```sql
+SELECT
+    sale_date,
+    employee_name,
+    sales,
+    LAG(sales) OVER(
+        ORDER BY sale_date,
+        employee_name
+    ) AS previous_sale
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+|Employee|Sales|Previous Sale|
+|---------|----:|------------:|
+|Alice|1200|NULL|
+|Eve|900|1200|
+|Irene|700|900|
+
+### Offset Example
+
+```sql
+LAG(sales, 2)
+```
+
+Returns the value **two rows back**.
+
+### Common Use Cases
+
+- Month-over-month analysis
+- Comparing current and previous sales
+- Growth calculations
+- Trend analysis
+
+---
+
+# LAG() with PARTITION BY
+
+Resets the comparison for each department.
+
+```sql
+SELECT
+    department,
+    employee_name,
+    sale_date,
+    sales,
+    LAG(sales) OVER(
+        PARTITION BY department
+        ORDER BY sale_date,
+        employee_name
+    ) AS previous_sale
+FROM `sixth-impulse-391307.window.practice`
+ORDER BY department,
+         sale_date,
+         employee_name;
+```
+
+### Important
+
+The first employee in **every department** returns `NULL`.
+
+This is because `PARTITION BY` creates independent windows.
+
+---
+
+# LEAD()
+
+Returns the value from the next row.
+
+Example:
+
+```sql
+SELECT
+    sale_date,
+    employee_name,
+    sales,
+    LEAD(sales) OVER(
+        ORDER BY sale_date,
+        employee_name
+    ) AS next_sale
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+|Employee|Sales|Next Sale|
+|---------|----:|--------:|
+|Alice|1200|900|
+|Eve|900|700|
+|Irene|700|1800|
+
+### Common Use Cases
+
+- Forecast comparisons
+- Identifying future values
+- Gap detection
+- Sequential analysis
+
+---
+
+# FIRST_VALUE()
+
+Returns the first value in a window.
+
+Example:
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    FIRST_VALUE(sales) OVER(
+        ORDER BY sales DESC
+    ) AS highest_sale,
+    FIRST_VALUE(sales) OVER(
+        ORDER BY sales DESC
+    ) - sales AS gap_to_best
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+|Employee|Sales|Highest Sale|Gap to Best|
+|---------|----:|-----------:|----------:|
+|Zack|2800|2800|0|
+|Tom|2600|2800|200|
+|Nick|2400|2800|400|
+
+### Common Use Cases
+
+- Compare every employee to the best performer.
+- Compare products to the top-selling product.
+- Benchmark performance across a dataset.
+
+---
+
+# Key Takeaways
+
+- `OVER()` defines the window.
+- `PARTITION BY` splits the window into groups.
+- `ORDER BY` defines the sequence of rows.
+- Window functions preserve every row.
+- `ROW_NUMBER()` assigns unique rankings.
+- `RANK()` skips numbers after ties.
+- `DENSE_RANK()` does not skip numbers after ties.
+- `SUM() OVER()` calculates totals without using `GROUP BY`.
+- Running totals require `ORDER BY`.
+- `LAG()` looks backward.
+- `LEAD()` looks forward.
+- `FIRST_VALUE()` returns the first value in the ordered window.
+
+---
 
 
 
