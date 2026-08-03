@@ -2702,9 +2702,393 @@ Example:
 - `LEAD()` looks forward.
 - `FIRST_VALUE()` returns the first value in the ordered window.
 
+
+
+
+# LAST_VALUE()
+
+## Overview
+
+`LAST_VALUE()` returns the last value **within the current window frame**.
+
+A common misconception is that it always returns the last value in the entire dataset. By default, this is **not true** because SQL's default window frame ends at the **current row**.
+
 ---
 
+## Default Behavior
 
+```sql
+SELECT
+    employee_name,
+    sales,
+    LAST_VALUE(sales) OVER(
+        ORDER BY sales DESC
+    ) AS last_sale
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+### Output (Example)
+
+| Employee | Sales | Last Sale |
+|----------|------:|----------:|
+| Zack | 2800 | 2800 |
+| Tom | 2600 | 2600 |
+| Nick | 2400 | 2400 |
+
+Notice that `last_sale` is the same as the current row's sales.
+
+---
+
+## Why?
+
+When an `ORDER BY` clause is present, SQL uses a default window frame that conceptually behaves like:
+
+```sql
+ROWS BETWEEN UNBOUNDED PRECEDING
+AND CURRENT ROW
+```
+
+This means:
+
+- Start from the first row.
+- Stop at the current row.
+
+Since the current row is always the last row in this frame, `LAST_VALUE()` returns the current row's value.
+
+---
+
+## Returning the True Last Value
+
+To include the entire partition, extend the window frame to the last row.
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    LAST_VALUE(sales) OVER(
+        ORDER BY sales DESC
+        ROWS BETWEEN UNBOUNDED PRECEDING
+        AND UNBOUNDED FOLLOWING
+    ) AS last_sale
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+### Result
+
+Every employee receives the lowest sale in the dataset because the window now includes every row.
+
+---
+
+## Understanding the Window Frame
+
+```sql
+UNBOUNDED PRECEDING
+```
+
+Starts from the first row.
+
+```sql
+UNBOUNDED FOLLOWING
+```
+
+Ends at the last row.
+
+This allows `LAST_VALUE()` to evaluate the complete ordered window instead of stopping at the current row.
+
+---
+
+## Common Use Cases
+
+- Retrieve the last transaction within a partition.
+- Identify the final status of an order.
+- Compare current values to the last recorded value.
+- Time-series analysis.
+
+---
+
+# Window Frames (ROWS BETWEEN)
+
+## Overview
+
+A **window frame** defines **which rows** are included in a window function calculation.
+
+General syntax:
+
+```sql
+ROWS BETWEEN start_row
+AND end_row
+```
+
+Think of a window frame as a **sliding window** that moves down the dataset.
+
+---
+
+# Most Common Window Frames
+
+## 1. Entire Window
+
+```sql
+ROWS BETWEEN UNBOUNDED PRECEDING
+AND UNBOUNDED FOLLOWING
+```
+
+Meaning:
+
+- Start at the first row.
+- End at the last row.
+
+Use Cases:
+
+- `FIRST_VALUE()`
+- `LAST_VALUE()`
+- Whole partition calculations
+
+---
+
+## 2. Running Total
+
+```sql
+ROWS BETWEEN UNBOUNDED PRECEDING
+AND CURRENT ROW
+```
+
+Meaning:
+
+- Start from the first row.
+- Stop at the current row.
+
+Used for:
+
+- Running totals
+- Cumulative averages
+- Cumulative counts
+
+---
+
+## 3. Current Row Only
+
+```sql
+ROWS BETWEEN CURRENT ROW
+AND CURRENT ROW
+```
+
+Meaning:
+
+Only the current row is included in the calculation.
+
+Although less common, this frame can be useful for specialized analytical calculations.
+
+---
+
+## 4. Moving Window
+
+```sql
+ROWS BETWEEN 2 PRECEDING
+AND CURRENT ROW
+```
+
+Meaning:
+
+Include:
+
+- Two previous rows
+- Current row
+
+As SQL moves through the dataset, the frame slides forward.
+
+---
+
+# Moving Sum
+
+A moving sum calculates the total over a fixed number of recent rows instead of the entire dataset.
+
+```sql
+SELECT
+    sale_date,
+    employee_name,
+    sales,
+    SUM(sales) OVER(
+        ORDER BY sale_date, employee_name
+        ROWS BETWEEN 2 PRECEDING
+        AND CURRENT ROW
+    ) AS moving_total
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+| Employee | Sales | Moving Total |
+|----------|------:|-------------:|
+| Alice | 1200 | 1200 |
+| Eve | 900 | 2100 |
+| Irene | 700 | 2800 |
+| Bob | 1800 | 3400 |
+
+Notice that only the current row and the previous two rows are included.
+
+---
+
+# Moving Average
+
+A moving average smooths fluctuations by averaging only recent rows.
+
+```sql
+SELECT
+    sale_date,
+    employee_name,
+    sales,
+    AVG(sales) OVER(
+        ORDER BY sale_date, employee_name
+        ROWS BETWEEN 2 PRECEDING
+        AND CURRENT ROW
+    ) AS moving_average
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example:
+
+| Employee | Sales | Moving Average |
+|----------|------:|---------------:|
+| Alice | 1200 | 1200.00 |
+| Eve | 900 | 1050.00 |
+| Irene | 700 | 933.33 |
+| Bob | 1800 | 1133.33 |
+
+---
+
+## Running Total vs Moving Total
+
+| Running Total | Moving Total |
+|---------------|--------------|
+| Accumulates values from the first row to the current row. | Uses a fixed-size sliding window. |
+| Keeps increasing as more rows are processed. | Older rows leave the window as new rows enter. |
+| Uses `UNBOUNDED PRECEDING`. | Uses `n PRECEDING`. |
+
+---
+
+## Running Average vs Moving Average
+
+| Running Average | Moving Average |
+|-----------------|----------------|
+| Average of all rows from the beginning to the current row. | Average of only a fixed number of recent rows. |
+| Continuously grows as more rows are added. | Maintains a constant window size. |
+| Useful for cumulative performance. | Useful for trend analysis and smoothing fluctuations. |
+
+---
+
+# NTILE()
+
+## Overview
+
+`NTILE()` divides rows into approximately equal-sized groups.
+
+Syntax:
+
+```sql
+NTILE(number_of_groups)
+OVER(
+    ORDER BY column_name
+)
+```
+
+Unlike ranking functions, `NTILE()` focuses on grouping rows rather than assigning exact ranks.
+
+---
+
+## Example
+
+```sql
+SELECT
+    employee_name,
+    sales,
+    NTILE(4) OVER(
+        ORDER BY sales DESC
+    ) AS quartile
+FROM `sixth-impulse-391307.window.practice`;
+```
+
+Example Output:
+
+| Employee | Sales | Quartile |
+|----------|------:|----------:|
+| Zack | 2800 | 1 |
+| Tom | 2600 | 1 |
+| Nick | 2400 | 1 |
+| Mary | 2200 | 1 |
+| ... | ... | ... |
+| Alice | 1200 | 3 |
+| Karen | 900 | 4 |
+| Irene | 700 | 4 |
+
+---
+
+## Understanding Quartiles
+
+Using:
+
+```sql
+NTILE(4)
+```
+
+creates four groups.
+
+| Quartile | Meaning |
+|----------|----------|
+| 1 | Top 25% |
+| 2 | Upper-middle 25% |
+| 3 | Lower-middle 25% |
+| 4 | Bottom 25% |
+
+---
+
+## Uneven Distribution
+
+If the number of rows is not perfectly divisible by the number of groups, SQL distributes the extra rows to the earlier groups.
+
+Example:
+
+22 rows divided into 4 groups:
+
+| Quartile | Rows |
+|----------|-----:|
+| 1 | 6 |
+| 2 | 6 |
+| 3 | 5 |
+| 4 | 5 |
+
+---
+
+## Common Use Cases
+
+- Customer segmentation
+- Employee performance categories
+- Salary banding
+- Risk scoring
+- Product classification
+- Sales performance analysis
+
+---
+
+# Ranking Functions Comparison
+
+| Function | Purpose | Handles Ties | Skips Numbers |
+|----------|---------|--------------|---------------|
+| `ROW_NUMBER()` | Assigns a unique sequential number to each row | No | No |
+| `RANK()` | Assigns the same rank to tied values | Yes | Yes |
+| `DENSE_RANK()` | Assigns the same rank to tied values | Yes | No |
+| `NTILE(n)` | Divides rows into approximately equal-sized groups | Not based on ties | Not Applicable |
+
+---
+
+# Key Takeaways
+
+- `LAST_VALUE()` returns the last value within the current window frame, **not necessarily the last row in the partition**.
+- Use `UNBOUNDED FOLLOWING` when you want `LAST_VALUE()` to consider the entire partition.
+- Window frames control which rows are included in a calculation.
+- Running calculations use `UNBOUNDED PRECEDING`.
+- Moving calculations use a bounded frame such as `2 PRECEDING`.
+- `NTILE()` groups rows into approximately equal-sized buckets rather than assigning ranks.
+- Window frames are essential for advanced analytical SQL and time-series analysis.
 
 
 
