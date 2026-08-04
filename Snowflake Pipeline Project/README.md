@@ -1,6 +1,6 @@
 # Snowflake Medallion Architecture – Hotel Booking Data Pipeline
 
-## 📌 Overview
+## Overview
 
 This project demonstrates how to build an end-to-end **ETL pipeline in Snowflake** using the 
 **Medallion Architecture (Bronze, Silver, and Gold layers)**. The pipeline ingests raw hotel booking data, performs data cleaning 
